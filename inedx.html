@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Anatomy of the Heart | Interactive</title>
+    <style>
+        :root {
+            --oxy-blood: #d00000;
+            --deoxy-blood: #0077b6;
+            --muscle-base: #8d0801;
+            --septum-color: #5c0a0a;
+            --valve-white: #f8f9fa;
+            --electric-yellow: #ffea00;
+            --bg-color: #ffffff;
+            --panel-bg: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+
+        @media (max-width: 1000px) {
+            .app-container { grid-template-columns: 1fr; }
+        }
+
+        .visualization-box {
+            position: relative;
+            background: radial-gradient(circle, #fff 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* The Heart Beating Animation */
+        .heart-svg {
+            width: 100%;
+            height: auto;
+            max-width: 600px;
+            cursor: crosshair;
+            animation: beat 1.2s ease-in-out infinite;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+        }
+
+        @keyframes beat {
+            0% { transform: scale(1); }
+            10% { transform: scale(1.05); }
+            20% { transform: scale(1); }
+            30% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        /* Interactivity Classes */
+        .anatomical-part {
+            transition: all 0.2s ease;
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 1;
+        }
+
+        .anatomical-part:hover, .anatomical-part.active {
+            filter: brightness(1.3) contrast(1.1);
+            stroke: white;
+            stroke-width: 3;
+            opacity: 1 !important;
+        }
+
+        .label-line {
+            stroke: #999;
+            stroke-width: 1;
+            stroke-dasharray: 2;
+        }
+
+        .label-text {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #555;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .label-text:hover { fill: var(--muscle-base); }
+
+        /* Information Panel */
+        .info-panel {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .info-header {
+            border-bottom: 2px solid var(--muscle-base);
+            padding-bottom: 10px;
+        }
+
+        .info-header h2 {
+            margin: 0;
+            color: var(--muscle-base);
+            font-size: 22px;
+        }
+
+        .info-body {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .blood-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .oxy { background: #ffe3e3; color: #c00; }
+        .deoxy { background: #e3f2fd; color: #0077b6; }
+
+        .conduction-effect {
+            stroke: var(--electric-yellow);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 4;
+            animation: flow 2s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes flow { to { stroke-dashoffset: -20; } }
+
+        .active-conduction { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="visualization-box">
+        <!-- High Detail Anatomical SVG -->
+        <svg class="heart-svg" viewBox="0 0 600 650" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="grad-oxy" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ef233c"/>
+                    <stop offset="100%" stop-color="#8d0801"/>
+                </linearGradient>
+                <linearGradient id="grad-deoxy" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#48cae4"/>
+                    <stop offset="100%" stop-color="#023e8a"/>
+                </linearGradient>
+            </defs>
+
+            <!-- Major Vessels -->
+            <path id="aorta" class="anatomical-part" d="M280,180 Q300,20 450,80 T500,200 L470,220 Q440,100 300,120 Z" fill="url(#grad-oxy)" />
+            <path id="svc" class="anatomical-part" d="M200,30 L250,30 L250,150 L200,150 Z" fill="url(#grad-deoxy)" />
+            <path id="ivc" class="anatomical-part" d="M220,580 L270,580 L270,500 L220,500 Z" fill="url(#grad-deoxy)" />
+            <path id="pa" class="anatomical-part" d="M300,200 L120,50 L80,90 L250,220 Z" fill="#4361ee" />
+            <path id="pv-vessel" class="anatomical-part" d="M450,230 L550,230 L550,270 L450,270 Z" fill="#d90429" />
+
+            <!-- Heart Muscle Foundation -->
+            <path d="M150,220 Q50,380 300,600 Q550,380 450,220 Z" fill="#8d0801" />
+            
+            <!-- Internal Septum -->
+            <path id="septum" class="anatomical-part" d="M290,220 L320,220 L320,580 L290,580 Z" fill="#6a040f" />
+
+            <!-- Chambers -->
+            <path id="ra" class="anatomical-part" d="M160,230 Q100,320 170,420 L280,420 L280,230 Z" fill="#0096c7" />
+            <path id="rv" class="anatomical-part" d="M170,430 L280,430 L280,560 Q200,500 170,430 Z" fill="#00b4d8" />
+            <path id="la" class="anatomical-part" d="M330,230 L440,230 Q480,320 430,420 L330,420 Z" fill="#ff4d6d" />
+            <path id="lv" class="anatomical-part" d="M330,430 L440,430 Q420,500 330,580 L330,430 Z" fill="#c9184a" />
+
+            <!-- Flow Arrows -->
+            <path d="M225,100 L225,150 L215,140 M225,150 L235,140" stroke="#fff" stroke-width="3" fill="none" />
+            <path d="M400,480 L400,530 L390,520 M400,530 L410,520" stroke="#fff" stroke-width="3" fill="none" />
+
+            <!-- Valves -->
+            <ellipse id="tv" class="anatomical-part" cx="225" cy="425" rx="20" ry="8" fill="var(--valve-white)" />
+            <ellipse id="mv" class="anatomical-part" cx="385" cy="425" rx="20" ry="8" fill="var(--valve-white)" />
+            <circle id="pulv" class="anatomical-part" cx="265" cy="210" r="12" fill="var(--valve-white)" />
+            <circle id="av" class="anatomical-part" cx="315" cy="200" r="12" fill="var(--valve-white)" />
+
+            <!-- Conduction System -->
+            <circle id="sa-node" class="anatomical-part" cx="210" cy="245" r="8" fill="var(--electric-yellow)" />
+            <circle id="av-node" class="anatomical-part" cx="305" cy="425" r="7" fill="var(--electric-yellow)" />
+            <path id="bundle" class="conduction-effect" d="M210,245 Q260,320 305,425 L305,580" />
+
+            <!-- Labels & Lines -->
+            <line x1="100" y1="280" x2="160" y2="280" class="label-line" />
+            <text x="30" y="285" class="label-text" onclick="showInfo('ra')">Right Atrium</text>
+
+            <line x1="500" y1="280" x2="440" y2="280" class="label-line" />
+            <text x="510" y="285" class="label-text" onclick="showInfo('la')">Left Atrium</text>
+
+            <line x1="300" y1="50" x2="350" y2="50" class="label-line" />
+            <text x="360" y="55" class="label-text" onclick="showInfo('aorta')">Aorta</text>
+        </svg>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <div class="info-header">
+            <h2 id="partName">Heart Anatomy</h2>
+        </div>
+        <div id="bloodStatus"></div>
+        <div class="info-body" id="partDesc">
+            Click on any label or anatomical part of the heart to see its specific scientific function and role in circulation.
+        </div>
+    </div>
+</div>
+
+<script>
+    const data = {
+        "ra": { name: "Right Atrium", status: "deoxy", desc: "Receives deoxygenated blood returning from the rest of the body via the Superior and Inferior Vena Cava and pumps it into the right ventricle." },
+        "rv": { name: "Right Ventricle", status: "deoxy", desc: "Pumps the deoxygenated blood through the pulmonary valve and into the lungs, where it receives fresh oxygen." },
+        "la": { name: "Left Atrium", status: "oxy", desc: "Receives oxygen-rich blood straight from the lungs via the pulmonary veins and pumps it into the left ventricle." },
+        "lv": { name: "Left Ventricle", status: "oxy", desc: "The largest and strongest chamber; it pumps oxygenated blood out to the entire body through the aorta. Its powerful contractions are what create blood pressure." },
+        "tv": { name: "Tricuspid Valve", status: "valve", desc: "Sits between the right atrium and right ventricle to prevent blood from flowing backward during ventricular contraction." },
+        "pulv": { name: "Pulmonary Valve", status: "valve", desc: "Controls the flow from the right ventricle into the pulmonary arteries, which lead to the lungs." },
+        "mv": { name: "Mitral (Bicuspid) Valve", status: "valve", desc: "Lets oxygen-rich blood pass from the left atrium into the left ventricle, preventing backflow." },
+        "av": { name: "Aortic Valve", status: "valve", desc: "Opens to allow oxygen-rich blood to leave the left ventricle and enter the aorta, the body's main artery." },
+        "svc": { name: "Superior Vena Cava", status: "deoxy", desc: "One of the largest veins in the body; it carries oxygen-poor blood from the upper body back to the right atrium." },
+        "ivc": { name: "Inferior Vena Cava", status: "deoxy", desc: "The largest vein in the lower body; it carries oxygen-poor blood from the lower body back to the right atrium." },
+        "aorta": { name: "Aorta", status: "oxy", desc: "The body’s largest artery; it distributes oxygen-rich blood from the left ventricle to the entire body." },
+        "pa": { name: "Pulmonary Artery", status: "deoxy", desc: "The only artery that carries oxygen-poor blood; it takes blood away from the heart and into the lungs." },
+        "pv-vessel": { name: "Pulmonary Veins", status: "oxy", desc: "Transport oxygen-rich blood from the lungs back into the left atrium." },
+        "septum": { name: "Septum", status: "structure", desc: "A thick wall of muscular tissue that divides the heart into left and right sides, preventing oxygen-poor and oxygen-rich blood from mixing." },
+        "sa-node": { name: "SA Node (Pacemaker)", status: "electric", desc: "The natural pacemaker of the heart; it generates electrical impulses to coordinate the heart's rhythmic pumping." },
+        "av-node": { name: "AV Node", status: "electric", desc: "Specialized cells that delay the electrical impulse to ensure the atria have finished contracting before the ventricles begin." }
+    };
+
+    function showInfo(id) {
+        const item = data[id];
+        document.getElementById('partName').textContent = item.name;
+        document.getElementById('partDesc').textContent = item.desc;
+        
+        // Update blood status badge
+        const statusBox = document.getElementById('bloodStatus');
+        statusBox.innerHTML = '';
+        if(item.status === 'oxy') statusBox.innerHTML = '<span class="blood-tag oxy">Oxygenated Blood</span>';
+        if(item.status === 'deoxy') statusBox.innerHTML = '<span class="blood-tag deoxy">Deoxygenated Blood</span>';
+        if(item.status === 'electric') statusBox.innerHTML = '<span class="blood-tag" style="background:#fff9c4; color:#fbc02d">Electrical Conduction</span>';
+
+        // Highlight SVG Part
+        document.querySelectorAll('.anatomical-part').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+
+        // Toggle electrical animation if node is clicked
+        const bundle = document.getElementById('bundle');
+        if(item.status === 'electric') {
+            bundle.classList.add('active-conduction');
+        } else {
+            bundle.classList.remove('active-conduction');
+        }
+    }
+
+    // Attach click events to all anatomical parts
+    document.querySelectorAll('.anatomical-part').forEach(part => {
+        part.addEventListener('click', () => showInfo(part.id));
+    });
+</script>
+
+</body>
+</html>
