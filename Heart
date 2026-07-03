@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic Heart Anatomy | Interactive Scientific Model</title>
+    <style>
+        :root {
+            --muscle-deep: #741b1b;
+            --muscle-mid: #a33333;
+            --muscle-light: #d66d6d;
+            --deoxy-blood: #2b6cb0;
+            --oxy-blood: #c53030;
+            --valve-tone: #f7fafc;
+            --electric-glow: #fbbf24;
+            --bg-canvas: #ffffff;
+            --sidebar-bg: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1280px;
+            width: 100%;
+            background: white;
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        /* Visualization Area */
+        .viewport {
+            position: relative;
+            background: radial-gradient(circle, #fff 0%, #e2e8f0 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            overflow: hidden;
+        }
+
+        .heart-svg {
+            width: 100%;
+            max-width: 700px;
+            height: auto;
+            filter: drop-shadow(0 30px 40px rgba(0,0,0,0.25));
+            animation: physiological-beat 1.4s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            cursor: pointer;
+        }
+
+        /* Heartbeat Logic: Systole & Diastole */
+        @keyframes physiological-beat {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.06) rotate(-1deg); } /* Atrial Systole */
+            30% { transform: scale(1.02); }
+            45% { transform: scale(1.08) rotate(1deg); }  /* Ventricular Systole */
+            100% { transform: scale(1); }
+        }
+
+        /* Interactive Elements */
+        .anatomy-part {
+            transition: all 0.3s ease;
+            stroke-width: 0.5;
+            stroke: rgba(0,0,0,0.1);
+        }
+
+        .anatomy-part:hover, .anatomy-part.active {
+            filter: brightness(1.2) saturate(1.2);
+            stroke: white;
+            stroke-width: 2.5;
+        }
+
+        /* Blood Flow Animation */
+        .flow-path {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 8, 12;
+            opacity: 0;
+            transition: opacity 0.5s;
+            animation: flow-move 2s linear infinite;
+        }
+
+        @keyframes flow-move {
+            to { stroke-dashoffset: -40; }
+        }
+
+        .show-flow .flow-path { opacity: 0.7; }
+        .flow-deoxy { stroke: #63b3ed; }
+        .flow-oxy { stroke: #fc8181; }
+
+        /* Information Panel */
+        .sidebar {
+            background: var(--sidebar-bg);
+            border-left: 1px solid #e2e8f0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: var(--muscle-deep);
+            margin: 0;
+            border-bottom: 4px solid var(--muscle-deep);
+            padding-bottom: 12px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .info-card h2 {
+            margin-top: 0;
+            color: #334155;
+            font-size: 20px;
+        }
+
+        .info-card p {
+            line-height: 1.6;
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .btn.active { background: var(--muscle-deep); color: white; border-color: var(--muscle-deep); }
+
+        .toggle-flow {
+            grid-column: 1 / -1;
+            background: #e2e8f0;
+            border: none;
+            padding: 12px;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        .toggle-flow.active { background: #38a169; color: white; }
+
+        /* Conduction Styles */
+        .conduction-node {
+            fill: var(--electric-glow);
+            filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.8));
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .active-electric .conduction-node { opacity: 1; }
+    </style>
+</head>
+<body class="show-flow">
+
+<div class="container">
+    <div class="viewport" id="viewport">
+        <svg class="heart-svg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- Muscle Texture Gradient -->
+                <radialGradient id="muscleGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#d66d6d" />
+                    <stop offset="70%" stop-color="#a33333" />
+                    <stop offset="100%" stop-color="#741b1b" />
+                </radialGradient>
+                <filter id="innerShadow">
+                    <feOffset dx="0" dy="2" />
+                    <feGaussianBlur stdDeviation="3" result="offset-blur" />
+                    <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
+                    <feFlood flood-color="black" flood-opacity="0.4" result="color" />
+                    <feComposite operator="in" in="color" in2="inverse" result="shadow" />
+                    <feComposite operator="over" in="shadow" in2="SourceGraphic" />
+                </filter>
+            </defs>
+
+            <!-- Major Vessels (Background) -->
+            <path id="svc" class="anatomy-part" d="M180,50 L230,50 L230,180 L180,180 Z" fill="#4a5568" />
+            <path id="ivc" class="anatomy-part" d="M200,550 L250,550 L250,480 L200,480 Z" fill="#4a5568" />
+            <path id="aorta" class="anatomy-part" d="M280,180 Q320,30 480,80 T520,220 L480,240 Q450,120 300,140 Z" fill="#9b2c2c" />
+            <path id="pa" class="anatomy-part" d="M300,200 L120,60 L90,100 L250,220 Z" fill="#2c5282" />
+
+            <!-- The Heart Exterior & Muscle Walls -->
+            <path d="M150,230 Q70,380 300,580 Q530,380 450,230 Z" fill="url(#muscleGrad)" filter="url(#innerShadow)" />
+            
+            <!-- Internal Septum -->
+            <path id="septum" class="anatomy-part" d="M285,240 L315,240 L315,570 L285,570 Z" fill="#5c1515" />
+
+            <!-- Chambers (Inner Voids) -->
+            <path id="ra" class="anatomy-part" d="M160,250 Q120,320 180,420 L280,420 L280,250 Z" fill="#2a4365" opacity="0.9" />
+            <path id="rv" class="anatomy-part" d="M180,430 L280,430 L280,560 Q210,500 180,430 Z" fill="#2c5282" opacity="0.9" />
+            <path id="la" class="anatomy-part" d="M320,250 L440,250 Q480,320 420,420 L320,420 Z" fill="#742a2a" opacity="0.9" />
+            <path id="lv" class="anatomy-part" d="M320,430 L440,430 Q410,500 320,570 L320,430 Z" fill="#9b2c2c" opacity="0.9" />
+
+            <!-- Blood Flow Paths -->
+            <g id="bloodFlow">
+                <path class="flow-path flow-deoxy" d="M205,80 L205,280 Q205,350 220,400" /> <!-- SVC to RV -->
+                <path class="flow-path flow-deoxy" d="M240,450 Q240,300 150,100" /> <!-- RV to PA -->
+                <path class="flow-path flow-oxy" d="M480,250 Q400,300 380,400" /> <!-- PV to LV -->
+                <path class="flow-path flow-oxy" d="M380,440 Q380,200 480,100" /> <!-- LV to Aorta -->
+            </g>
+
+            <!-- Valves (Detailed representation) -->
+            <g id="valves">
+                <ellipse id="tv" class="anatomy-part" cx="230" cy="425" rx="25" ry="6" fill="var(--valve-tone)" />
+                <ellipse id="mv" class="anatomy-part" cx="370" cy="425" rx="25" ry="6" fill="var(--valve-tone)" />
+                <circle id="pv" class="anatomy-part" cx="265" cy="225" r="12" fill="var(--valve-tone)" />
+                <circle id="av" class="anatomy-part" cx="330" cy="215" r="12" fill="var(--valve-tone)" />
+            </g>
+
+            <!-- Conduction System -->
+            <g id="electric">
+                <circle id="sa-node" class="conduction-node" cx="195" cy="265" r="8" />
+                <circle id="av-node" class="conduction-node" cx="300" cy="425" r="7" />
+                <path id="conduction-lines" class="conduction-node" d="M195,265 Q250,320 300,425 L300,560" stroke="var(--electric-glow)" stroke-width="3" fill="none" stroke-dasharray="4" />
+            </g>
+        </svg>
+    </div>
+
+    <div class="sidebar">
+        <div class="header">
+            <h1>Heart Anatomy</h1>
+        </div>
+
+        <div class="info-card">
+            <h2 id="partTitle">Human Heart Model</h2>
+            <p id="partDesc">Select a component to view its scientific function. Toggle blood flow to see the directional pathway through the chambers.</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn toggle-flow active" onclick="toggleFlow()">Show Blood Flow</button>
+            <button class="btn" onclick="highlight('sa-node')">SA Node</button>
+            <button class="btn" onclick="highlight('av-node')">AV Node</button>
+            <button class="btn" onclick="highlight('ra')">Right Atrium</button>
+            <button class="btn" onclick="highlight('rv')">Right Ventricle</button>
+            <button class="btn" onclick="highlight('la')">Left Atrium</button>
+            <button class="btn" onclick="highlight('lv')">Left Ventricle</button>
+            <button class="btn" onclick="highlight('tv')">Tricuspid Valve</button>
+            <button class="btn" onclick="highlight('mv')">Mitral Valve</button>
+            <button class="btn" onclick="highlight('av')">Aortic Valve</button>
+            <button class="btn" onclick="highlight('pv')">Pulmonary Valve</button>
+            <button class="btn" onclick="highlight('aorta')">Aorta</button>
+            <button class="btn" onclick="highlight('septum')">Septum</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const anatomyData = {
+        "ra": { title: "Right Atrium", desc: "Receives deoxygenated blood returning from the rest of the body via the Superior/Inferior Vena Cava and pumps it into the right ventricle through the tricuspid valve." },
+        "rv": { title: "Right Ventricle", desc: "Pumps deoxygenated blood through the pulmonary valve and into the pulmonary artery, where it travels to the lungs for oxygenation." },
+        "la": { title: "Left Atrium", desc: "Receives oxygen-rich blood straight from the lungs via the pulmonary veins and pumps it into the left ventricle through the mitral valve." },
+        "lv": { title: "Left Ventricle", desc: "The largest and strongest chamber; it pumps oxygenated blood out to the entire body through the aortic valve into the aorta. Its powerful contractions create your blood pressure." },
+        "tv": { title: "Tricuspid Valve", desc: "Sits between the right atrium and right ventricle to prevent blood from flowing backward during ventricular contraction." },
+        "pv": { title: "Pulmonary Valve", desc: "Controls the flow of deoxygenated blood from the right ventricle into the pulmonary arteries leading to the lungs." },
+        "mv": { title: "Mitral (Bicuspid) Valve", desc: "Lets oxygen-rich blood pass from the left atrium into the left ventricle, maintaining one-way flow." },
+        "av": { title: "Aortic Valve", desc: "Opens to allow oxygen-rich blood to leave the left ventricle and enter the aorta, the body's main artery distribution point." },
+        "aorta": { title: "Aorta", desc: "The body’s largest artery; it distributes oxygen-rich blood from the left ventricle to the systemic circulation (entire body)." },
+        "septum": { title: "Septum", desc: "A thick wall of muscular tissue that divides the heart into left and right sides, preventing oxygen-poor and oxygen-rich blood from mixing." },
+        "sa-node": { title: "SA Node (Sinoatrial)", desc: "The heart's natural pacemaker. It generates electrical impulses that trigger the sequence of atrial and ventricular contractions." },
+        "av-node": { title: "AV Node (Atrioventricular)", desc: "A cluster of cells that coordinate the electrical signal between the upper and lower chambers, ensuring efficient pumping." }
+    };
+
+    function highlight(id) {
+        // Reset
+        document.querySelectorAll('.anatomy-part').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        document.body.classList.remove('active-electric');
+
+        // Update Text
+        const part = anatomyData[id];
+        if (part) {
+            document.getElementById('partTitle').textContent = part.title;
+            document.getElementById('partDesc').textContent = part.desc;
+        }
+
+        // Apply Active Class
+        const svgEl = document.getElementById(id);
+        if (svgEl) svgEl.classList.add('active');
+
+        // Check if electrical
+        if (id.includes('node')) {
+            document.body.classList.add('active-electric');
+        }
+    }
+
+    function toggleFlow() {
+        const body = document.body;
+        const btn = document.querySelector('.toggle-flow');
+        body.classList.toggle('show-flow');
+        btn.classList.toggle('active');
+        btn.textContent = body.classList.contains('show-flow') ? "Hide Blood Flow" : "Show Blood Flow";
+    }
+
+    // SVG click listeners
+    document.querySelectorAll('.anatomy-part').forEach(part => {
+        part.addEventListener('click', () => highlight(part.id));
+    });
+</script>
+
+</body>
+</html>
