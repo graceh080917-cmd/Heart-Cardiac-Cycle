@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Anatomy of the Human Heart</title>
+    <style>
+        :root {
+            --blood-red: #d90429;
+            --blood-blue: #0077b6;
+            --muscle-dark: #6a040f;
+            --muscle-light: #9d0208;
+            --valve-color: #edf2f4;
+            --conduction: #ffea00;
+            --bg-page: #f8f9fa;
+            --text-primary: #212529;
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            color: var(--muscle-dark);
+            font-size: 2.5rem;
+            margin: 0;
+        }
+
+        header p {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 40px;
+        }
+
+        @media (max-width: 992px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        /* SVG & Visualization Styling */
+        .visual-container {
+            background: radial-gradient(circle, #fff 0%, #e9ecef 100%);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            border: 1px solid #dee2e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .heart-svg {
+            width: 100%;
+            height: auto;
+            max-width: 550px;
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.2));
+            animation: pulse 1.5s ease-in-out infinite;
+            cursor: crosshair;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.03); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .part {
+            transition: all 0.3s ease;
+            stroke: rgba(255,255,255,0.2);
+            stroke-width: 1;
+        }
+
+        .part:hover, .part.active {
+            filter: brightness(1.2) saturate(1.3);
+            stroke: white;
+            stroke-width: 4;
+        }
+
+        /* Information Panel Styling */
+        .info-panel {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 16px;
+            padding: 30px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .info-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--muscle-dark);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .info-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--muscle-dark);
+            margin: 0;
+        }
+
+        .info-body {
+            line-height: 1.8;
+            font-size: 1.05rem;
+            color: #495057;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .oxygenated { background: #ffe3e3; color: #c92a2a; }
+        .deoxygenated { background: #e7f5ff; color: #1971c2; }
+
+        .btn-grid {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-btn {
+            background: white;
+            border: 1px solid #dee2e6;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-btn:hover { background: #f1f3f5; }
+        .nav-btn.active { background: var(--muscle-dark); color: white; border-color: var(--muscle-dark); }
+
+        /* Electrical Conduction Animation */
+        .conduction-path {
+            stroke: var(--conduction);
+            stroke-width: 3;
+            stroke-dasharray: 6;
+            fill: none;
+            opacity: 0;
+            animation: spark 2s linear infinite;
+        }
+
+        .active .conduction-path, .part.active[id*="node"] { opacity: 1; }
+
+        @keyframes spark {
+            to { stroke-dashoffset: -24; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Interactive Heart Anatomy</h1>
+        <p>A realistic scientific guide to the human heart's structure and function.</p>
+    </header>
+
+    <div class="main-content">
+        <div class="visual-container">
+            <svg class="heart-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="grad-ox" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#ff4d6d" />
+                        <stop offset="100%" style="stop-color:#c9184a" />
+                    </radialGradient>
+                    <radialGradient id="grad-deox" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#48cae4" />
+                        <stop offset="100%" style="stop-color:#023e8a" />
+                    </radialGradient>
+                    <radialGradient id="grad-muscle" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#a4161a" />
+                        <stop offset="100%" style="stop-color:#660708" />
+                    </radialGradient>
+                </defs>
+
+                <!-- Major Vessels (Background) -->
+                <path id="aorta" class="part" d="M220,150 Q240,20 380,80 T420,180 L390,190 Q360,100 240,100 Z" fill="url(#grad-ox)" />
+                <path id="svc" class="part" d="M150,20 L190,20 L190,120 L150,120 Z" fill="url(#grad-deox)" />
+                <path id="ivc" class="part" d="M160,450 L200,450 L200,380 L160,380 Z" fill="url(#grad-deox)" />
+                <path id="pa" class="part" d="M230,160 L100,50 L70,80 L200,180 Z" fill="#4361ee" />
+                
+                <!-- Main Heart Muscle Structure -->
+                <path d="M120,180 Q60,300 250,480 Q440,300 380,180 Z" fill="url(#grad-muscle)" />
+                
+                <!-- Internal Structures (Cutaway) -->
+                <path id="septum" class="part" d="M240,180 L270,180 L270,460 L240,460 Z" fill="#5c0a0a" />
+
+                <!-- Chambers -->
+                <path id="ra" class="part" d="M130,190 Q90,250 140,330 L230,330 L230,190 Z" fill="#0096c7" />
+                <path id="rv" class="part" d="M140,345 L230,345 L230,450 Q160,400 140,345 Z" fill="#00b4d8" />
+                <path id="la" class="part" d="M280,190 L370,190 Q410,250 360,330 L280,330 Z" fill="#ff4d6d" />
+                <path id="lv" class="part" d="M280,345 L370,345 Q350,400 280,470 L280,345 Z" fill="#c9184a" />
+
+                <!-- Valves (Clickable Nodes) -->
+                <circle id="tv" class="part" cx="185" cy="337" r="14" fill="var(--valve-color)" />
+                <circle id="mv" class="part" cx="325" cy="337" r="14" fill="var(--valve-color)" />
+                <circle id="pv" class="part" cx="215" cy="170" r="10" fill="var(--valve-color)" />
+                <circle id="av" class="part" cx="255" cy="160" r="10" fill="var(--valve-color)" />
+
+                <!-- Electrical Conduction System -->
+                <g id="conduction">
+                    <circle id="sa-node" class="part" cx="165" cy="205" r="7" fill="var(--conduction)" />
+                    <circle id="av-node" class="part" cx="250" cy="337" r="6" fill="var(--conduction)" />
+                    <path class="conduction-path" d="M165,205 Q210,270 250,337" />
+                    <path class="conduction-path" d="M250,337 L255,460" />
+                </g>
+            </svg>
+        </div>
+
+        <div class="info-panel" id="infoPanel">
+            <div id="badgeContainer"></div>
+            <div class="info-header">
+                <div class="info-icon">🫀</div>
+                <h2 class="info-title" id="pTitle">Human Heart</h2>
+            </div>
+            <div class="info-body" id="pDesc">
+                Click on any part of the heart to explore its anatomical function. This scientific model highlights chambers, valves, major vessels, and the electrical system.
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-grid" id="btnContainer"></div>
+</div>
+
+<script>
+    const heartData = {
+        "ra": { title: "Right Atrium", type: "deox", desc: "Receives deoxygenated blood returning from the rest of the body through the Vena Cava and pumps it into the right ventricle." },
+        "rv": { title: "Right Ventricle", type: "deox", desc: "Pumps deoxygenated blood through the pulmonary valve into the lungs to be re-oxygenated." },
+        "la": { title: "Left Atrium", type: "ox", desc: "Receives fresh, oxygen-rich blood straight from the lungs via the pulmonary veins and pumps it into the left ventricle." },
+        "lv": { title: "Left Ventricle", type: "ox", desc: "The strongest chamber. It pumps oxygenated blood out to the entire body. Its powerful contractions are responsible for creating your blood pressure." },
+        "tv": { title: "Tricuspid Valve", type: "valve", desc: "Sits between the right atrium and right ventricle. It functions as a one-way door to prevent blood from flowing backward during contraction." },
+        "pv": { title: "Pulmonary Valve", type: "valve", desc: "Controls the flow of blood from the right ventricle into the pulmonary arteries leading to the lungs." },
+        "mv": { title: "Mitral Valve", type: "valve", desc: "Also known as the Bicuspid valve. It lets oxygen-rich blood pass from the left atrium into the left ventricle." },
+        "av": { title: "Aortic Valve", type: "valve", desc: "Opens to allow oxygen-rich blood to leave the left ventricle and enter the aorta, the body's main artery." },
+        "aorta": { title: "Aorta", type: "ox", desc: "The body’s largest artery. It distributes oxygen-rich blood from the left ventricle to every part of the human body." },
+        "svc": { title: "Superior Vena Cava", type: "deox", desc: "One of the two largest veins in the body; it carries oxygen-poor blood from the upper body back to the heart." },
+        "ivc": { title: "Inferior Vena Cava", type: "deox", desc: "Carries oxygen-poor blood from the lower body back to the right atrium." },
+        "pa": { title: "Pulmonary Artery", type: "deox", desc: "Transports oxygen-poor blood away from the heart and into the lungs to pick up fresh oxygen." },
+        "septum": { title: "Septum", type: "structure", desc: "A thick wall of muscular tissue that divides the heart into left and right sides, preventing the mixing of oxygen-poor and oxygen-rich blood." },
+        "sa-node": { title: "Electrical System", type: "electrical", desc: "Includes the SA Node (the natural pacemaker) and AV Node. These cells generate electrical impulses to coordinate the heart's rhythmic beat." }
+    };
+
+    const pTitle = document.getElementById('pTitle');
+    const pDesc = document.getElementById('pDesc');
+    const badgeContainer = document.getElementById('badgeContainer');
+    const btnContainer = document.getElementById('btnContainer');
+
+    function updateView(id) {
+        // Reset styles
+        document.querySelectorAll('.part').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        
+        // Update Content
+        const item = heartData[id];
+        pTitle.textContent = item.title;
+        pDesc.textContent = item.desc;
+        
+        // Highlight Part
+        const target = document.getElementById(id);
+        if(target) target.classList.add('active');
+
+        // Highlight Button
+        const btn = document.querySelector(`[data-id="${id}"]`);
+        if(btn) btn.classList.add('active');
+
+        // Update Badge
+        badgeContainer.innerHTML = '';
+        if(item.type === 'ox') badgeContainer.innerHTML = '<span class="badge oxygenated">Oxygenated Blood</span>';
+        if(item.type === 'deox') badgeContainer.innerHTML = '<span class="badge deoxygenated">Deoxygenated Blood</span>';
+        if(item.type === 'valve') badgeContainer.innerHTML = '<span class="badge" style="background:#f1f3f5;color:#495057">Heart Valve</span>';
+        if(item.type === 'electrical') badgeContainer.innerHTML = '<span class="badge" style="background:#fff9db;color:#e67700">Conduction System</span>';
+    }
+
+    // Initialize Buttons
+    Object.keys(heartData).forEach(id => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-btn';
+        btn.textContent = heartData[id].title;
+        btn.dataset.id = id;
+        btn.onclick = () => updateView(id);
+        btnContainer.appendChild(btn);
+
+        // Link SVG elements
+        const svgPart = document.getElementById(id);
+        if(svgPart) svgPart.onclick = () => updateView(id);
+    });
+
+    // Special Case for Conduction Group
+    document.getElementById('conduction').onclick = () => updateView('sa-node');
+</script>
+
+</body>
+</html>
