@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardiac Cycle: Anatomy & Blood Flow</title>
+    <!-- Imports Three.js to render the 3D heart model without needing local files -->
+    <script src="https://cloudflare.com"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-red: #ff3333;
+            --accent-blue: #3377ff;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        h1 { margin: 0; color: #ffffff; }
+        h2 { color: #ffffff; border-left: 4px solid var(--accent-red); padding-left: 10px; }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .grid-container { grid-template-columns: 1fr; }
+        }
+        .card {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        /* Page 1: 3D Canvas Styles */
+        #canvas-container {
+            width: 100%;
+            height: 350px;
+            background-color: #000;
+            border-radius: 8px;
+            position: relative;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .btn:hover { background: #555; }
+        .info-box {
+            margin-top: 15px;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 6px;
+            min-height: 50px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        /* Page 2: Beating Heart & Flow Styles */
+        .heart-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 250px;
+            background: #090909;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            20% { transform: scale(1.12); }
+            40% { transform: scale(1.02); }
+            60% { transform: scale(1.18); }
+            100% { transform: scale(1); }
+        }
+        .beating-heart {
+            display: flex;
+            gap: 15px;
+            animation: heartBeat 0.8s infinite cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .chamber {
+            width: 80px;
+            height: 140px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+        }
+        .deoxygenated {
+            background: linear-gradient(135deg, #0044cc, #002288);
+            border: 2px solid var(--accent-blue);
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+        }
+        .oxygenated {
+            background: linear-gradient(135deg, #cc1111, #880000);
+            border: 2px solid var(--accent-red);
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+        }
+        /* Wiggers Diagram Styles */
+        .wiggers-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Anatomy of the Human Heart & Cardiac Cycle</h1>
+        <p>Interactive Academic Dashboard for Structure, Circulation Dynamics, and Pressure Metrics</p>
+    </header>
+
+    <div class="grid-container">
+        
+        <!-- SECTION 1: 3D STRUCTURE & ANATOMICAL LABELS -->
+        <div class="card">
+            <h2>1. 3D Structure & Anatomical Labels</h2>
+            <p>Interact with the live 3D geometric model. Click the labels below to isolate and highlight key structures.</p>
+            <div id="canvas-container"></div>
+            <div class="controls">
+                <button class="btn" onclick="labelClick('atria')">Atria</button>
+                <button class="btn" onclick="labelClick('ventricles')">Ventricles</button>
+                <button class="btn" onclick="labelClick('aorta')">Aorta Arch</button>
+                <button class="btn" onclick="labelClick('reset')">Reset View</button>
+            </div>
+            <div class="info-box" id="info-panel">Click an anatomical structure button to inspect its primary functional description.</div>
+        </div>
+
+        <!-- SECTION 2: SIMULATED BLOOD FLOW & WIGGERS DIAGRAM -->
+        <div class="card">
+            <h2>2. Blood Flow & Wiggers Diagram</h2>
+            <p><strong>Circulation Rule:</strong> <span style="color:var(--accent-blue)">Blue</span> represents deoxygenated blood returning from body systems. <span style="color:var(--accent-red)">Red</span> represents oxygenated blood returning fresh from the lungs.</p>
+            
+            <!-- CSS Beating Heart Simulation -->
+            <div class="heart-box">
+                <div class="beating-heart">
+                    <div class="chamber deoxygenated">
+                        <span>RIGHT SIDE</span>
+                        <span style="font-size:10px; margin-top:10px; opacity:0.8;">Deoxygenated<br>(To Lungs)</span>
+                    </div>
+                    <div class="chamber oxygenated">
+                        <span>LEFT SIDE</span>
+                        <span style="font-size:10px; margin-top:10px; opacity:0.8;">Oxygenated<br>(To Body)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wiggers Diagram Integration -->
+            <div class="wiggers-box">
+                <h3>Complementary Reading: Wiggers Diagram</h3>
+                <p style="font-size: 14px; margin-bottom: 15px;">The Wiggers diagram details the dynamic electrical and mechanical changes during a cardiac cycle. It maps electrocardiogram (ECG) signatures against synchronized fluctuations in atrial, ventricular, and aortic pressures.</p>
+                <img src="https://wikimedia.org" alt="Standard Wiggers Diagram mapping cardiac events">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 3D Engine Initialization Script -->
+    <script>
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        // Lights Setup
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+        scene.add(new THREE.AmbientLight(0x444444));
+
+        // Geometric Group to represent Heart Structures
+        const modelGroup = new THREE.Group();
+
+        // Main Myocardium Shape (Ventricles + Atria body)
+        const bodyGeo = new THREE.SphereGeometry(1.4, 32, 32);
+        bodyGeo.scale(1, 1.4, 1);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xaa2222, roughness: 0.4 });
+        const heartBody = new THREE.Mesh(bodyGeo, bodyMat);
+        modelGroup.add(heartBody);
+
+        // Aorta Structural Tube
+        const aortaGeo = new THREE.TorusGeometry(0.9, 0.25, 16, 100, Math.PI * 1.2);
+        const aortaMat = new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.3 });
+        const aortaSegment = new THREE.Mesh(aortaGeo, aortaMat);
+        aortaSegment.position.set(0.2, 1.4, -0.1);
+        aortaSegment.rotation.z = -Math.PI / 3;
+        modelGroup.add(aortaSegment);
+
+        scene.add(modelGroup);
+        camera.position.set(0, 0, 4.5);
+
+        // Animation Loop (Slow rotation for dimensional perspective)
+        function renderLoop() {
+            requestAnimationFrame(renderLoop);
+            modelGroup.rotation.y += 0.006;
+            renderer.render(scene, camera);
+        }
+        renderLoop();
+
+        // Responsive Resizing Engine
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Interactive Interface Labels Engine
+        function labelClick(structure) {
+            const info = document.getElementById('info-panel');
+            // Flash color reaction onto materials
+            if (structure === 'aorta') {
+                aortaSegment.material.color.setHex(0xffffff);
+                setTimeout(() => aortaSegment.material.color.setHex(0xcc3333), 800);
